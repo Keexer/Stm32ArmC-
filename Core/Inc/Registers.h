@@ -97,6 +97,20 @@ struct REMOVE_MACRO(RCC_Type)
   Reg32 DCKCFGR2;               /* Offset: 0x094 Dedicated Clocks Configuration Register */
 };
 
+struct REMOVE_MACRO(GPIO_Type)
+{
+  Reg32 MODER;    /* Offset: 0x00 Port Mode Register */
+  Reg32 OTYPER;   /* Offset: 0x04 Port Output Type Register */
+  Reg32 OSPEEDR;  /* Offset: 0x08 Port Output Speed Register */
+  Reg32 PUPDR;    /* Offset: 0x0C Port Pull-Up/Pull-Down Register */
+  Reg32 IDR;      /* Offset: 0x10 Port Input Data Register */
+  Reg32 ODR;      /* Offset: 0x14 Port Output Data Register */
+  Reg32 BSRR;     /* Offset: 0x18 Port Bit Set/Reset Register */
+  Reg32 LCKR;     /* Offset: 0x1C Port Configuration Lock Register */
+  Reg32 AFRL;     /* Offset: 0x20 Alternate Function Low Register */
+  Reg32 AFRH;     /* Offset: 0x24 Alternate Function High Register */
+};
+
 struct SHPR
 {
   Reg8 shpr[12U];
@@ -106,3 +120,4 @@ extern REMOVE_MACRO(SCB_Type)* REMOVE_MACRO(SCB);
 extern REMOVE_MACRO(SysTick_Type)* REMOVE_MACRO(SysTick);
 extern REMOVE_MACRO(NVIC_Type)* REMOVE_MACRO(NVIC);
 extern REMOVE_MACRO(RCC_Type)* REMOVE_MACRO(RCC);
+extern REMOVE_MACRO(GPIO_Type)* REMOVE_MACRO(GPIO)[8];

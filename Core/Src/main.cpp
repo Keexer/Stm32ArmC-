@@ -3,6 +3,7 @@
 #include "Registers.h"
 #include "Interrupts.h"
 #include "Tick.h"
+#include "Gpio.h"
 #include <cassert>
 
 /* Private variables ---------------------------------------------------------*/
@@ -20,20 +21,9 @@ static constexpr uint32_t PORT_B_BASE = 0x40020400UL;
 
 static inline void initLeds()
 {
-  // Enable peripheral clock for Port B
-  constexpr uint32_t RCC_BASE_TEMP = 0x40023800;
-  volatile uint32_t* const RCC_AHB1 = (volatile uint32_t*) (RCC_BASE_TEMP + 0x30UL);
-  *RCC_AHB1 |= (1 << 1); // Enable clock to Port B
-
-  volatile uint32_t* const MODERB = (volatile uint32_t*) (PORT_B_BASE);
-  volatile uint32_t* const OTYPERB = (volatile uint32_t*) (PORT_B_BASE + 0x04UL);
-  volatile uint32_t* const OSPEEDRB = (volatile uint32_t*) (PORT_B_BASE + 0x08UL);
-  volatile uint32_t* const PUPDRB = (volatile uint32_t*) (PORT_B_BASE + 0x0C);
-  *MODERB &= ~((0b11 << 28) | (0b11 << 14) | 0b11); // Clear
-  *MODERB |= (0b01 << 28) | (0b01 << 14) | 0b01;  // Set I/O as output
-  *OTYPERB &= ~((1 << 14) | (1 << 7) | 1);   // Clear -> Pull-Push
-  *OSPEEDRB &= ~((0b11 << 28) | (0b11 << 14) | 0b11); // Clear -> Low speed
-  *PUPDRB &= ~((0b11 << 28) | (0b11 << 14) | 0b11); // Clear -> No pull up/down
+  core::configureOutput(core::PORT_B, core::PIN_0, core::PUSH_PULL, core::NO_PULL);
+  core::configureOutput(core::PORT_B, core::PIN_7, core::PUSH_PULL, core::NO_PULL);
+  core::configureOutput(core::PORT_B, core::PIN_14, core::PUSH_PULL, core::NO_PULL);
 }
 
 static volatile uint32_t* ODR_B = (volatile uint32_t*) (PORT_B_BASE + 0x14UL);
