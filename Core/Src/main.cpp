@@ -3,6 +3,7 @@
 #include "Registers.h"
 #include "Interrupts.h"
 #include "Tick.h"
+#include <cassert>
 
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart3;
@@ -73,70 +74,20 @@ static void updateTick(uint32_t clockspeed)
   *VAL   = 0UL;                                             /* Load the SysTick Counter Value (Jacob: Clear any previous value)*/
 }
 
-static void initTick(uint32_t clockspeed)
+static void initTick(uint32_t clockspeed, uint32_t hz)
 {
-  static constexpr uint32_t TICK_FREQ = 1; // 1 KHz
-  uint32_t ticks = clockspeed / (1000U / TICK_FREQ);
-    /* Configure the SysTick to have interrupt in 1ms time basis*/
-  if ((ticks - 1UL) > 0xFFFFFFUL)
-  {
-    return;                                                   /* Reload value impossible */
-  }
+  uint32_t ticks = clockspeed / hz;
+  assert((ticks - 1UL) < 0xFFFFFFUL);
   REMOVE_MACRO(SysTick)->RVR = (uint32_t)(ticks - 1UL); /* set reload value register */
   REMOVE_MACRO(SysTick)->CVR = 0UL; /* Clear current count, any value writte will clear the register. Use 0 for readability */
   REMOVE_MACRO(SysTick)->CSR = (1UL << 2U) | (1UL << 1U) | 1UL; /* Clock source = Processor clock | Enable SysTick exception request (Interrupt) | Enable counter */
 
   core::configIrqPriority(core::SysTick_IRQ_Number, 0U, 0U);
-  
-  /* Configure the SysTick IRQ priority */
-  // static constexpr uint32_t tickPriority = 0U;
-  // static constexpr uint32_t prioBits = 4U;
-  // if (tickPriority < (1UL << prioBits))
-  // {
-  //   volatile uint32_t priorityGroup = 0x00U;
-    
-  //   volatile uint32_t* const SCB_AIRCR = (volatile uint32_t*)0xE000ED0C;        // Application interrupt and reset control register
-  //   priorityGroup = (*SCB_AIRCR & (0x7L << 8U)) >> 8UL;
-    
-  //   //NVIC_EncodePriority(priorityGroup, tickPriority, 0U);
-  //   // Encode
-  //   uint32_t PriorityGroupTmp = (priorityGroup & (uint32_t)0x07UL);   /* only values 0..7 are used          */
-  //   uint32_t PreemptPriorityBits;
-  //   uint32_t SubPriorityBits;
-  //   uint32_t SubPriority = 0U;
-
-  //   uint32_t numberPrioBits = 4UL;
-  //   PreemptPriorityBits = ((7UL - PriorityGroupTmp) > (uint32_t)(numberPrioBits)) ? (uint32_t)(numberPrioBits) : (uint32_t)(7UL - PriorityGroupTmp);
-  //   SubPriorityBits     = ((PriorityGroupTmp + (uint32_t)(numberPrioBits)) < (uint32_t)7UL) ? (uint32_t)0UL : (uint32_t)((PriorityGroupTmp - 7UL) + (uint32_t)(numberPrioBits));
-
-  //   uint32_t prio (
-  //           ((tickPriority & (uint32_t)((1UL << (PreemptPriorityBits)) - 1UL)) << SubPriorityBits) |
-  //           ((SubPriority     & (uint32_t)((1UL << (SubPriorityBits    )) - 1UL)))
-  //         );
-
-  //   //NVIC_SetPriority(SysTick_IRQ_Number, prio);
-  //   if ((int32_t)(core::SysTick_IRQ_Number) >= 0)
-  //   {
-  //     REMOVE_MACRO(NVIC_Type)* nvic = (REMOVE_MACRO(NVIC_Type)*)0xE000E100;
-  //     REMOVE_MACRO(NVIC)->IPR[((uint32_t)core::SysTick_IRQ_Number)] = (uint8_t)((prio << (8U - numberPrioBits)) & (uint32_t)0xFFUL);
-  //   }
-  //   else
-  //   {
-  //     SHPR* shpr = (SHPR*)0xE000ED18;
-  //     shpr->shpr[(((uint32_t)core::SysTick_IRQ_Number) & 0xFUL)-4UL] = (uint8_t)0xF0;//(uint8_t)((prio << (8U - numberPrioBits)) & (uint32_t)0xFFUL);
-  //     uint32_t val = shpr->shpr[11];
-  //     volatile int t = val;
-  //   }
-  // }
-  // else
-  // {
-  //   return;
-  // }
 }
 
 volatile uint32_t msTick = 0;
 
-void delay(int ms)
+void delay(uint32_t ms)
 {
   uint32_t start = msTick;
   while (msTick - start < ms);
@@ -151,7 +102,7 @@ int main(void)
 {
   enableDataInstructionCachePrefetch();
   core::configInterruptGroupPriority<4U, 0U>();
-  initTick(16000000);
+  initTick(16000000, 1000);
   /* USER CODE BEGIN 1 */
   //HAL_InitTick(0);
   /* USER CODE END 1 */
@@ -181,8 +132,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   //MX_GPIO_Init();
-  //MX_USART3_UART_Init();
-  // ? MX_USB_OTG_FS_PCD_Init();
+  MX_USART3_UART_Init();
+  //MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -193,6 +144,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    uint8_t text[] = {'H', 'e', 'l', 'l', 'o', '\n', '\r'};
+    HAL_UART_Transmit(&huart3, text, 7, 100);
     setLeds();
     //HAL_Delay(100);
     delay(500);
@@ -243,8 +196,8 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = {};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {};
 
   /** Configure the main internal regulator output voltage
   */
@@ -357,7 +310,7 @@ static void MX_USB_OTG_FS_PCD_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitTypeDef GPIO_InitStruct = {};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();

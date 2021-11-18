@@ -22,7 +22,7 @@ TARGET = NucleoInit
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -O0
+OPT = -O2
 
 
 #######################################
@@ -64,6 +64,7 @@ CPP_SOURCES = \
 Core/Src/main.cpp \
 Core/Src/new.cpp \
 Core/Src/Interrupts.cpp \
+Core/Src/Registers.cpp \
 
 # ASM sources
 ASM_SOURCES =  
@@ -136,7 +137,10 @@ ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffuncti
 
 CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
-CPPFLAGS = $(MCU) ${CPP_INCLUDES} $(OPT) -std=c++17 -fno-exceptions -fno-unwind-tables -fdata-sections -ffunction-sections
+CPPFLAGS = $(MCU) ${CPP_INCLUDES} $(OPT) -std=c++17 -fno-exceptions -fno-unwind-tables -fdata-sections -ffunction-sections \
+-Wredundant-decls -Wcast-align -Wmissing-include-dirs -Wswitch-enum -Wextra -Wall -Werror \
+-Wformat=2 -Wmissing-format-attribute -Wformat-nonliteral -Wuninitialized \
+-Wno-unused-function # temporary
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
@@ -156,6 +160,8 @@ LDSCRIPT = ls.ld
 # libraries
 LIBS = -lc -lm -lnosys 
 LIBDIR = 
+# Wl = pass option to linker
+# --gc-sections = garbace collection dead code, need to be defined -fdata-sections and -ffunction-sections compile flags
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all

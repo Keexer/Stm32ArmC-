@@ -42,6 +42,16 @@ void operator delete[](void* p, std::nothrow_t) noexcept
     operator delete(p);
 }
 
+void operator delete(void* p, std::size_t)
+{
+  operator delete(p);
+}
+
+void operator delete[](void* p, std::size_t)
+{
+  operator delete(p);
+}
+
 extern "C" void _exit(int)
 {
   while (1);
@@ -72,15 +82,35 @@ extern "C" int _getpid()
   return 1;
 }
 
-#define DRN_ENTER_CRITICAL_SECTION(_usis) { _usis = taskENTER_CRITICAL_FROM_ISR(); }
-#define DRM_EXIT_CRITICAL_SECTION(_usis) { taskEXIT_CRITICAL_FROM_ISR(_usis); }
-
-void __malloc_lock(struct _reent* r)
+/**
+  \brief   Enable IRQ Interrupts
+  \details Enables IRQ interrupts by clearing the I-bit in the CPSR.
+           Can only be executed in Privileged modes.
+           This is a shorter instruction to set the PRIMASK bit to 1.
+ */
+__attribute__((always_inline)) static inline void enable_irq(void)
 {
-  // lock recursive mutex
+  __asm volatile ("cpsie i" : : : "memory");
 }
 
-void __malloc_unlock(struct _reent* r)
+
+/**
+  \brief   Disable IRQ Interrupts
+  \details Disables IRQ interrupts by setting the I-bit in the CPSR.
+           Can only be executed in Privileged modes.
+           This is a shorter instruction to set the PRIMASK bit to 0.
+ */
+__attribute__((always_inline)) static inline void disable_irq(void)
 {
-  // unlock recursive mutex
+  __asm volatile ("cpsid i" : : : "memory");
+}
+
+void __malloc_lock(struct _reent*)
+{
+  disable_irq();
+}
+
+void __malloc_unlock(struct _reent*)
+{
+  enable_irq();
 }
