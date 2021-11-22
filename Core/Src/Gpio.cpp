@@ -34,16 +34,34 @@ namespace
 namespace core
 {
 
-  void configureInput(Port port, Pin pin, PullMode mode, Speed speed)
+  IOPin configureInput(Port port, Pin pin, PullMode mode, Speed speed)
   {
     enableGpioPort(port);
     setPinMode(REMOVE_MACRO(GPIO)[port], pin, INPUT, mode, speed, PUSH_PULL);
+    return IOPin{port, pin};
   }
 
-  void configureOutput(Port port, Pin pin, OutputType type, PullMode pullMode, Speed speed)
+  IOPin configureOutput(Port port, Pin pin, OutputType type, PullMode pullMode, Speed speed)
   {
     enableGpioPort(port);
     setPinMode(REMOVE_MACRO(GPIO)[port], pin, OUTPUT, pullMode, speed, type);
+    return IOPin{port, pin};
+  }
+
+  void setOutput(IOPin pin)
+  {
+    REMOVE_MACRO(GPIO)[pin.port]->ODR |= 1 << pin.pin;
+  }
+
+  void clearOutput(IOPin pin)
+  {
+    REMOVE_MACRO(GPIO)[pin.port]->ODR &= ~(1 << pin.pin);
+  }
+
+  bool readInput(IOPin pin)
+  {
+    const volatile bool value = (REMOVE_MACRO(GPIO)[pin.port]->IDR & (1 << pin.pin)) >> pin.pin;
+    return value;
   }
 
 }

@@ -4,6 +4,7 @@
 #include "Interrupts.h"
 #include "Tick.h"
 #include "Gpio.h"
+#include "Init.h"
 #include <cassert>
 
 /* Private variables ---------------------------------------------------------*/
@@ -17,82 +18,11 @@ static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 
-static constexpr uint32_t PORT_B_BASE = 0x40020400UL;
-
-static inline void initLeds()
-{
-  core::configureOutput(core::PORT_B, core::PIN_0, core::PUSH_PULL, core::NO_PULL);
-  core::configureOutput(core::PORT_B, core::PIN_7, core::PUSH_PULL, core::NO_PULL);
-  core::configureOutput(core::PORT_B, core::PIN_14, core::PUSH_PULL, core::NO_PULL);
-}
-
-static volatile uint32_t* ODR_B = (volatile uint32_t*) (PORT_B_BASE + 0x14UL);
-
-static inline void setLeds()
-{
-  *ODR_B |= (1 << 14) | (1 << 7) | 1;
-}
-
-static inline void clearLeds()
-{
-  *ODR_B &= ~((1 << 14) | (1 << 7) | 1);
-}
-
-static inline void enableDataInstructionCachePrefetch()
-{
-  volatile uint32_t* const FLASH_ACR = (volatile uint32_t*) 0x40023C00UL;
-  static constexpr uint32_t ICEN = 1 << 9; // Enable instruction cache
-  static constexpr uint32_t DCEN = 1 << 10; // Enable data cache
-  static constexpr uint32_t PRFTEN = 1 << 8; // Enable prefetch
-  *FLASH_ACR |= ICEN | DCEN | PRFTEN;
-}
-
-static void updateTick(uint32_t clockspeed)
-{
-  constexpr uint32_t TICK_FREQ = 1; // 1 KHz
-  uint32_t ticks = clockspeed / (1000U / TICK_FREQ);
-    /* Configure the SysTick to have interrupt in 1ms time basis*/
-  if ((ticks - 1UL) > 0xFFFFFFUL)
-  {
-    return;                                                   /* Reload value impossible */
-  }
-
-  static constexpr uint32_t SySTick_Base = 0xE000E010;
-  volatile uint32_t* const LOAD = (volatile uint32_t*)(0xE000E010 + 0x4);
-  volatile uint32_t* const VAL = (volatile uint32_t*)(SySTick_Base + 0x8);
-  *LOAD  = (uint32_t)(ticks - 1UL);                         /* set reload register */
-  *VAL   = 0UL;                                             /* Load the SysTick Counter Value (Jacob: Clear any previous value)*/
-}
-
-static void initTick(uint32_t clockspeed, uint32_t hz)
-{
-  uint32_t ticks = clockspeed / hz;
-  assert((ticks - 1UL) < 0xFFFFFFUL);
-  REMOVE_MACRO(SysTick)->RVR = (uint32_t)(ticks - 1UL); /* set reload value register */
-  REMOVE_MACRO(SysTick)->CVR = 0UL; /* Clear current count, any value writte will clear the register. Use 0 for readability */
-  REMOVE_MACRO(SysTick)->CSR = (1UL << 2U) | (1UL << 1U) | 1UL; /* Clock source = Processor clock | Enable SysTick exception request (Interrupt) | Enable counter */
-
-  core::configIrqPriority(core::SysTick_IRQ_Number, 0U, 0U);
-}
-
-volatile uint32_t msTick = 0;
-
-void delay(uint32_t ms)
-{
-  uint32_t start = msTick;
-  while (msTick - start < ms);
-}
-
-extern "C" void SysTick_Handler(void)
-{
-  msTick++;
-}
-
 int main(void)
 {
   enableDataInstructionCachePrefetch();
   core::configInterruptGroupPriority<4U, 0U>();
-  initTick(16000000, 1000);
+  core::initTick(16000000, 1000);
   /* USER CODE BEGIN 1 */
   //HAL_InitTick(0);
   /* USER CODE END 1 */
@@ -115,7 +45,7 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-  updateTick(96000000);
+  core::updateTick(96000000, 1000);
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -138,10 +68,10 @@ int main(void)
     HAL_UART_Transmit(&huart3, text, 7, 100);
     setLeds();
     //HAL_Delay(100);
-    delay(500);
+    core::delay(500);
     clearLeds();
     //HAL_Delay(100);
-    delay(500);
+    core::delay(500);
 
     /* USER CODE END WHILE */
 
@@ -149,36 +79,6 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
-// static void initLeds()
-// {
-//   // Enable peripheral clock for Port B
-//   const uint32_t RCC_BASE_TEMP = 0x40023800;
-//   volatile uint32_t* const RCC_AHB1 = (volatile uint32_t*) (RCC_BASE_TEMP + 0x30UL);
-//   *RCC_AHB1 |= (1 << 1); // Enable clock to Port B
-
-//   volatile uint32_t* const MODERB = (volatile uint32_t*) (PORT_B_BASE);
-//   volatile uint32_t* const OTYPERB = (volatile uint32_t*) (PORT_B_BASE + 0x04UL);
-//   volatile uint32_t* const OSPEEDRB = (volatile uint32_t*) (PORT_B_BASE + 0x08UL);
-//   volatile uint32_t* const PUPDRB = (volatile uint32_t*) (PORT_B_BASE + 0x0C);
-//   *MODERB &= ~((0b11 << 28) | (0b11 << 14) | 0b11); // Clear
-//   *MODERB |= (0b01 << 28) | (0b01 << 14) | 0b01;  // Set I/O as output
-//   *OTYPERB &= ~((1 << 14) | (1 << 7) | 1);   // Clear -> Pull-Push
-//   *OSPEEDRB &= ~((0b11 << 28) | (0b11 << 14) | 0b11); // Clear -> Low speed
-//   *PUPDRB &= ~((0b11 << 28) | (0b11 << 14) | 0b11); // Clear -> No pull up/down
-// }
-
-// static volatile uint32_t* ODR_B = (volatile uint32_t*) (PORT_B_BASE + 0x14UL);
-
-// static void setLeds()
-// {
-//   *ODR_B |= (1 << 14) | (1 << 7) | 1;
-// }
-
-// static void clearLeds()
-// {
-//   *ODR_B &= ~((1 << 14) | (1 << 7) | 1);
-// }
 
 /**
   * @brief System Clock Configuration

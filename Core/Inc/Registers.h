@@ -111,9 +111,14 @@ struct REMOVE_MACRO(GPIO_Type)
   Reg32 AFRH;     /* Offset: 0x24 Alternate Function High Register */
 };
 
-struct SHPR
+struct REMOVE_MACRO(Flash_type)
 {
-  Reg8 shpr[12U];
+  Reg32 ACR;      /* Offset: 0x00 Access Control Register */
+  Reg32 KEYR;     /* Offset: 0x04 Key Register */
+  Reg32 OPTKEYR;  /* Offset: 0x08 Option Key Register */
+  Reg32 SR;       /* Offset: 0x0C Status Register */
+  Reg32 CR;       /* Offset: 0x10 Control Register */
+  Reg32 OPTCR;    /* Offset: 0x14 Option Control Register */
 };
 
 extern REMOVE_MACRO(SCB_Type)* REMOVE_MACRO(SCB);
@@ -121,3 +126,4 @@ extern REMOVE_MACRO(SysTick_Type)* REMOVE_MACRO(SysTick);
 extern REMOVE_MACRO(NVIC_Type)* REMOVE_MACRO(NVIC);
 extern REMOVE_MACRO(RCC_Type)* REMOVE_MACRO(RCC);
 extern REMOVE_MACRO(GPIO_Type)* REMOVE_MACRO(GPIO)[8];
+extern REMOVE_MACRO(Flash_type)* REMOVE_MACRO(FLASH);

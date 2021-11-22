@@ -12,6 +12,7 @@ constexpr uint32_t GPIO_E_Base = 0x40021000;
 constexpr uint32_t GPIO_F_Base = 0x40021400;
 constexpr uint32_t GPIO_G_Base = 0x40021800;
 constexpr uint32_t GPIO_H_Base = 0x40021C00;
+constexpr uint32_t FLASH_Base = 0x40023C00;
 
 REMOVE_MACRO(SCB_Type)* REMOVE_MACRO(SCB) = reinterpret_cast<REMOVE_MACRO(SCB_Type)*>(SCB_Base);
 REMOVE_MACRO(SysTick_Type)* REMOVE_MACRO(SysTick) = reinterpret_cast<REMOVE_MACRO(SysTick_Type)*>(SysTick_Base);
@@ -25,3 +26,4 @@ REMOVE_MACRO(GPIO_Type)* REMOVE_MACRO(GPIO)[8] = {reinterpret_cast<REMOVE_MACRO(
                                                   reinterpret_cast<REMOVE_MACRO(GPIO_Type)*>(GPIO_F_Base),
                                                   reinterpret_cast<REMOVE_MACRO(GPIO_Type)*>(GPIO_G_Base),
                                                   reinterpret_cast<REMOVE_MACRO(GPIO_Type)*>(GPIO_H_Base)};
+REMOVE_MACRO(Flash_type)* REMOVE_MACRO(FLASH) = reinterpret_cast<REMOVE_MACRO(Flash_type)*>(FLASH_Base);

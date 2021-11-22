@@ -66,7 +66,16 @@ namespace core
     OPEN_DRAIN
   };
 
-  void configureInput(Port port, Pin pin, PullMode mode, Speed speed = LOW_SPEED);
-  void configureOutput(Port port, Pin pin, OutputType type, PullMode mode, Speed speed = LOW_SPEED);
+  struct IOPin
+  {
+    Port port;
+    Pin pin;
+  };
+
+  IOPin configureInput(Port port, Pin pin, PullMode mode, Speed speed = LOW_SPEED);
+  IOPin configureOutput(Port port, Pin pin, OutputType type, PullMode mode, Speed speed = LOW_SPEED);
+  void setOutput(IOPin pin);
+  void clearOutput(IOPin pin);
+  bool readInput(IOPin pin);
 
 }

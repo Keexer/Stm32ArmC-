@@ -66,6 +66,7 @@ Core/Src/new.cpp \
 Core/Src/Interrupts.cpp \
 Core/Src/Registers.cpp \
 Core/Src/Gpio.cpp \
+Core/Src/Tick.cpp \
 
 # ASM sources
 ASM_SOURCES =  

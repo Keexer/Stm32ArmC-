@@ -1,9 +1,10 @@
 #pragma once
+#include <stdint.h>
 
 namespace core
 {
-    //static void updateTick(uint32_t clockspeed);
-    //static void initTick(uint32_t clockspeed);
-    //void delay(int ms);
-    //extern "C" void SysTick_Handler(void)
+    void updateTick(uint32_t clockspeed, uint32_t frequency);
+    void initTick(uint32_t clockspeed, uint32_t frequency);
+    void delay(uint32_t ms);
+    extern "C" void SysTick_Handler(void);
 }
